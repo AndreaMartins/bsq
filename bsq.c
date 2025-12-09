@@ -66,54 +66,51 @@ static int parse_first_line(char *line, t_params *p)
 
 static int read_map(FILE *f, int expected_rows, char ***out, int *cols)
 {
-    char **map = NULL;
-    size_t cap = 0;
+    char **map = malloc(expected_rows * sizeof(char *)); // Reservamos todo desde el inicio
+    if (!map)
+        return -1;
+
     char *line = NULL;
     size_t linecap = 0;
     ssize_t len;
-    int r = 0, width = -1;
+    int width = -1;
 
-    while (r < expected_rows)
+    for (int r = 0; r < expected_rows; r++)
     {
+        // Leer una línea del archivo
         len = getline(&line, &linecap, f);
         if (len == -1)
             goto fail;
 
+        // Quitar el salto de línea
         len = trim_newline(line, len);
         if (len <= 0)
             goto fail;
 
+        // Determinar ancho del mapa con la primera fila
         if (width == -1)
             width = (int)len;
-        else if (width != (int)len)
+        else if (len != width) // Validar que todas las filas tengan el mismo ancho
             goto fail;
 
-        if (r >= (int)cap)
-        {
-            size_t newcap = cap ? cap * 2 : 8;
-            char **tmp = realloc(map, newcap * sizeof(char *));
-            if (!tmp)
-                goto fail;
-            map = tmp;
-            cap = newcap;
-        }
-
+        // Reservar memoria para la fila y copiarla
         map[r] = malloc(len + 1);
         if (!map[r])
             goto fail;
 
         memcpy(map[r], line, len + 1);
-        r++;
     }
 
     free(line);
-    *out = map;
-    *cols = width;
-    return r;
+
+    *out = map;    // Pasar puntero a la matriz
+    *cols = width; // Pasar ancho de las filas
+    return expected_rows;
 
 fail:
     free(line);
-    for (int i = 0; i < r; i++) free(map[i]);
+    for (int i = 0; i < expected_rows; i++)
+        free(map[i]);
     free(map);
     return -1;
 }
