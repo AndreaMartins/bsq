@@ -28,35 +28,33 @@ static ssize_t trim_newline(char *buf, ssize_t len)
 /* ============================= */
 /*       PARSE FIRST LINE        */
 /* ============================= */
-#include <ctype.h>
-
 static int parse_first_line(char *line, t_params *p)
 {
     char *ptr = line;
     int rows = 0;
 
     // ======== 1. Leer número de filas ========
-    if (!isdigit(*ptr)) return -1; // primera posición debe ser dígito
+    if (*ptr < '0' || *ptr > '9') return -1; // primera posición debe ser dígito
 
-    while (isdigit(*ptr)) {
-        rows = rows * 10 + (*ptr - '0'); // convertir carácter a número
+    while (*ptr >= '0' && *ptr <= '9') {    // convertir carácter a número
+        rows = rows * 10 + (*ptr - '0');
         ptr++;
     }
 
     if (rows <= 0) return -1;
 
     // Saltar espacios/tabs hasta el siguiente campo
-    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+    while (*ptr == ' ' || *ptr == '\t') ptr++;
 
     // ======== 2. Leer caracter 'empty' ========
     if (*ptr == '\0') return -1;
     char empty = *ptr++;
-    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+    while (*ptr == ' ' || *ptr == '\t') ptr++;
 
     // ======== 3. Leer caracter 'obstacle' ========
     if (*ptr == '\0') return -1;
     char obstacle = *ptr++;
-    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+    while (*ptr == ' ' || *ptr == '\t') ptr++;
 
     // ======== 4. Leer caracter 'full' ========
     if (*ptr == '\0') return -1;
