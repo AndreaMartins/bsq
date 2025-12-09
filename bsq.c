@@ -28,37 +28,53 @@ static ssize_t trim_newline(char *buf, ssize_t len)
 /* ============================= */
 /*       PARSE FIRST LINE        */
 /* ============================= */
+#include <ctype.h>
 
 static int parse_first_line(char *line, t_params *p)
 {
-    char *end = NULL;
+    char *ptr = line;
+    int rows = 0;
 
-    /* Format: "<rows> <empty> <obstacle> <full>" */
-    char *num = strtok(line, " \t");
-    char *e   = strtok(NULL, " \t");
-    char *o   = strtok(NULL, " \t");
-    char *f   = strtok(NULL, " \t");
+    // ======== 1. Leer número de filas ========
+    if (!isdigit(*ptr)) return -1; // primera posición debe ser dígito
 
-    if (!num || !e || !o || !f)
+    while (isdigit(*ptr)) {
+        rows = rows * 10 + (*ptr - '0'); // convertir carácter a número
+        ptr++;
+    }
+
+    if (rows <= 0) return -1;
+
+    // Saltar espacios/tabs hasta el siguiente campo
+    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+
+    // ======== 2. Leer caracter 'empty' ========
+    if (*ptr == '\0') return -1;
+    char empty = *ptr++;
+    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+
+    // ======== 3. Leer caracter 'obstacle' ========
+    if (*ptr == '\0') return -1;
+    char obstacle = *ptr++;
+    while (*ptr && isspace((unsigned char)*ptr)) ptr++;
+
+    // ======== 4. Leer caracter 'full' ========
+    if (*ptr == '\0') return -1;
+    char full = *ptr++;
+
+    // ======== 5. Validar que los caracteres sean distintos ========
+    if (empty == obstacle || empty == full || obstacle == full)
         return -1;
 
-    long rows = strtol(num, &end, 10);
-    if (*end != '\0' || rows <= 0)
-        return -1;
+    // ======== 6. Guardar en la estructura ========
+    p->rows = rows;
+    p->empty = empty;
+    p->obstacle = obstacle;
+    p->full = full;
 
-    if (strlen(e) != 1 || strlen(o) != 1 || strlen(f) != 1)
-        return -1;
-
-    p->rows = (int)rows;
-    p->empty = e[0];
-    p->obstacle = o[0];
-    p->full = f[0];
-
-    if (p->empty == p->obstacle || p->empty == p->full || p->obstacle == p->full)
-        return -1;
-
-    return 0;
+    return 0; // éxito
 }
+
 
 /* ============================= */
 /*         READ MAP LINES        */
